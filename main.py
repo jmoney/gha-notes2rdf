@@ -31,17 +31,20 @@ class TopicGraph:
     
 class Topic(TopicGraph):
     iri: URIRef
+    topic: str
     contains: list
     path: str
 
     def __init__(self, graph: Graph, path: Path):
         super().__init__(graph)
         self.iri = self.coin(path.parent.name)
-        self.path = slugify(path.parent.name)
+        self.path = path.parent
+        self.topic = path.parent.name
         self.contains = []
 
         super().add((self.iri, RDF.type, self.type()))
         super().add((self.iri, NOTES_NS.Path, Literal(self.path, datatype=XSD.string)))
+        super().add((self.iri, NOTES_NS.Topic, Literal(self.topic, datatype=XSD.string)))
     
     def coin(self, key):
         return URIRef(f'{self.graph.base}Topic{slugify(key)}')
