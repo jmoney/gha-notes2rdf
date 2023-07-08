@@ -134,8 +134,7 @@ if __name__ == "__main__":
         markdown = Path(path)
         note = None
         if markdown.parent.name == 'daily-status':
-            print(f'{daily_notes[0]} {str(markdown)}', file=sys.stderr)
-            note = DailyNote(notes, markdown, find_previous=daily_notes[0] != str(markdown))
+            note = DailyNote(notes, markdown, find_previous=(Path(daily_notes[0]) != markdown))
         else:
             note = Note(notes, markdown)
 
