@@ -44,7 +44,7 @@ class Topic(TopicGraph):
 
         super().add((self.iri, RDF.type, self.type()))
         super().add((self.iri, NOTES_NS.Path, Literal(self.path, datatype=XSD.string)))
-        super().add((self.iri, NOTES_NS.Topic, Literal(self.topic, datatype=XSD.string)))
+        super().add((self.iri, NOTES_NS.topic, Literal(self.topic, datatype=XSD.string)))
     
     def coin(self, key):
         return URIRef(f'{self.graph.base}Topic{slugify(key)}')
