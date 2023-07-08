@@ -25,7 +25,7 @@ class Topic:
 
     def add_to_graph(self, graph):
         graph.add((self.iri, RDF.type, NOTES_NS.Topic))
-        graph.add((self.iri, NOTES_NS.Path, Literal(markdown.parent, datatype=XSD.string)))
+        graph.add((self.iri, NOTES_NS.Path, Literal(self.path, datatype=XSD.string)))
         for note in self.contains:
             graph.add((self.iri, NOTES_NS.contains, note))
 
@@ -53,7 +53,7 @@ def slugify(value: str):
 
 def create_topic(base_uri: str, markdown: Path):
     iri = URIRef(f'{base_uri}#Topic{slugify(markdown.parent.name)}')
-    return Topic(iri, markdown)
+    return Topic(iri, markdown.parent.name)
 
 def create_note(base_uri: str, markdown: Path):
     iri = URIRef(f'{base_uri}#Note{slugify(markdown.stem)}')
@@ -78,7 +78,6 @@ if __name__ == "__main__":
 
     for path in sorted(glob.glob(f'{args.root}/**/*.md', recursive=True)):
         markdown = Path(path)
-        
         note = create_note(args.uri, markdown)
         nodes[note.iri] = note
         topic = create_topic(args.uri, markdown)
