@@ -92,9 +92,7 @@ class DailyNote(Note):
         if find_previous:
             # find the previous day
             yesterday = _today - timedelta(days=1)
-            print(f'{path.parent}/{yesterday.strftime("%Y_%m_%d")}.md', file=sys.stderr)
             while os.path.isfile(f'{path.parent}/{yesterday.strftime("%Y_%m_%d")}.md') is False:
-                print(f'{path.parent}/{yesterday.strftime("%Y_%m_%d")}.md', file=sys.stderr)
                 yesterday = yesterday - timedelta(days=1)
 
             self.previous = URIRef(f'{graph.base}Daily{slugify(yesterday.strftime("%Y-%m-%d"))}')
@@ -136,6 +134,7 @@ if __name__ == "__main__":
         markdown = Path(path)
         note = None
         if markdown.parent.name == 'daily-status':
+            print(f'{daily_notes[0]} {str(markdown)}', file=sys.stderr)
             note = DailyNote(notes, markdown, find_previous=daily_notes[0] != str(markdown))
         else:
             note = Note(notes, markdown)
