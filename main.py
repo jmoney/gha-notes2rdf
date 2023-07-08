@@ -1,13 +1,11 @@
 import argparse
 import glob
 import os
-import sys
 
-from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 from pathlib import Path
 from rdflib import XSD, Graph, Namespace
-from rdflib.namespace import RDF
+from rdflib.namespace import DCTERMS, RDF
 from rdflib.term import Literal, URIRef
 
 
@@ -61,7 +59,7 @@ class Note(TopicGraph):
     title: str
     filename: str
 
-    def __init__(self, graph: Graph, path: Path):
+    def __init__(self, graph: Graph,  topic: Topic, path: Path):
         super().__init__(graph)
         self.iri = self.coin(path.stem)
         self.title = self.title(path.stem)
@@ -70,6 +68,7 @@ class Note(TopicGraph):
         super().add((self.iri, RDF.type, self.type()))
         super().add((self.iri, NOTES_NS.title, Literal(self.title, datatype=XSD.string)))
         super().add((self.iri, NOTES_NS.filename, Literal(self.filename, datatype=XSD.string)))
+        super().add((self.iri, NOTES_NS.topic, topic.iri))
 
     def coin(self, key):
         return URIRef(f'{self.graph.base}Note{slugify(key)}')
@@ -84,8 +83,8 @@ class DailyNote(Note):
     today: str
     previous: any
 
-    def __init__(self, graph: Graph, path: Path, find_previous: bool = True):
-        super().__init__(graph, path)
+    def __init__(self, graph: Graph, path: Path, topic: Topic, find_previous: bool = True):
+        super().__init__(graph, topic, path)
         # date-i-fy
         # later when this literal is added to the graph, it will be converted to a date. If it's not a xsd:date, like 2021-01-01, it will have "something" done.  I could not determine what that something
         # was but it was not what I wanted.  So I'm doing this.
@@ -135,15 +134,12 @@ if __name__ == "__main__":
     daily_notes = sorted(glob.glob(f'{args.root}/daily-status/*.md'))
     for path in sorted(glob.glob(f'{args.root}/**/*.md', recursive=True)):
         markdown = Path(path)
+        topic = Topic(notes, markdown)
+
         note = None
         if markdown.parent.name == 'daily-status':
-            note = DailyNote(notes, markdown, find_previous=(Path(daily_notes[0]) != markdown))
+            note = DailyNote(notes, markdown, topic, find_previous=(Path(daily_notes[0]) != markdown))
         else:
-            note = Note(notes, markdown)
-
-        topic = Topic(notes, markdown)
-        if notes.items(topic.iri) is None:
-            notes.add(topic)
-        topic.will_contain(note.iri)
+            note = Note(notes, topic, markdown)
     
     print(notes.serialize(format=args.format))
