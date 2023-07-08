@@ -39,7 +39,7 @@ class Topic(TopicGraph):
         super().__init__(graph)
         self.iri = self.coin(path.parent.name)
         self.path = path.parent
-        self.topic = path.parent.name
+        self.topic = slugify(path.parent.name)
         self.contains = []
 
         super().add((self.iri, RDF.type, self.type()))
