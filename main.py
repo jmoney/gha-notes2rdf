@@ -36,8 +36,14 @@ class Divider(TopicGraph):
         self.iri = self.coin(name)
         self.name = slugify(name)
 
+        super().add((self.iri, RDF.type, self.type()))
+        super().add((self.iri, NOTES_NS.name, Literal(self.name, datatype=XSD.string)))
+
     def coin(self, key):
         return URIRef(f'{self.graph.base}Divider{slugify(key)}')
+
+    def type(self):
+        return NOTES_NS.Divider
 
 class Topic(TopicGraph):
     iri: URIRef
