@@ -11,7 +11,7 @@ from rdflib.term import Literal, URIRef
 
 NOTES_NS = Namespace('https://www.jmoney.dev/notes#')
 
-class TopicGraph:
+class BinderGraph:
     def __init__(self, graph: Graph):
         self.graph = graph
         self.graph.bind('notes', NOTES_NS)
@@ -27,7 +27,7 @@ class TopicGraph:
     def serialize(self, format):
         return self.graph.serialize(format=format)
 
-class Divider(TopicGraph):
+class Binder(BinderGraph):
     iri: URIRef
     name: str
 
@@ -40,49 +40,49 @@ class Divider(TopicGraph):
         super().add((self.iri, NOTES_NS.name, Literal(self.name, datatype=XSD.string)))
 
     def coin(self, key):
+        return URIRef(f'{self.graph.base}Binder{slugify(key)}')
+
+    def type(self):
+        return NOTES_NS.Divider
+
+class Divider(BinderGraph):
+    iri: URIRef
+    binder: Binder
+    name: str
+
+    def __init__(self, graph: Graph, binder: Binder, path: Path):
+        super().__init__(graph)
+        self.iri = self.coin(path.parent.name)
+        self.binder = binder
+        self.name = slugify(path.parent.name)
+
+        super().add((self.iri, RDF.type, self.type()))
+        super().add((self.iri, NOTES_NS.name, Literal(self.name, datatype=XSD.string)))
+        super().add((self.iri, DCTERMS.isPartOf, self.binder.iri))
+
+    def coin(self, key):
         return URIRef(f'{self.graph.base}Divider{slugify(key)}')
 
     def type(self):
         return NOTES_NS.Divider
 
-class Topic(TopicGraph):
-    iri: URIRef
-    divider: Divider
-    name: str
-
-    def __init__(self, graph: Graph, divider: Divider, path: Path):
-        super().__init__(graph)
-        self.iri = self.coin(path.parent.name)
-        self.divider = divider
-        self.name = slugify(path.parent.name)
-
-        super().add((self.iri, RDF.type, self.type()))
-        super().add((self.iri, NOTES_NS.name, Literal(self.name, datatype=XSD.string)))
-        super().add((self.iri, DCTERMS.isPartOf, self.divider.iri))
-
-    def coin(self, key):
-        return URIRef(f'{self.graph.base}Topic{slugify(key)}')
-
-    def type(self):
-        return NOTES_NS.Topic
-
-class Note(TopicGraph):
+class Note(BinderGraph):
     iri: URIRef
     title: str
-    topic: Topic
+    Divider: Divider
     filename: str
 
-    def __init__(self, graph: Graph,  topic: Topic, path: Path):
+    def __init__(self, graph: Graph,  Divider: Divider, path: Path):
         super().__init__(graph)
         self.iri = self.coin(path.stem)
         self.title = slugify(path.stem)
-        self.topic = topic
+        self.Divider = Divider
         self.filename = path
 
         super().add((self.iri, RDF.type, self.type()))
         super().add((self.iri, NOTES_NS.title, Literal(self.title, datatype=XSD.string)))
         super().add((self.iri, NOTES_NS.filename, Literal(self.filename, datatype=XSD.string)))
-        super().add((self.iri, DCTERMS.isPartOf, self.topic.iri))
+        super().add((self.iri, DCTERMS.isPartOf, self.Divider.iri))
 
     def coin(self, key):
         return URIRef(f'{self.graph.base}Note{slugify(key)}')
@@ -94,8 +94,8 @@ class DailyNote(Note):
     today: str
     previous: any
 
-    def __init__(self, graph: Graph, path: Path, topic: Topic, find_previous: bool = True):
-        super().__init__(graph, topic, path)
+    def __init__(self, graph: Graph, path: Path, Divider: Divider, find_previous: bool = True):
+        super().__init__(graph, Divider, path)
         # date-i-fy
         # later when this literal is added to the graph, it will be converted to a date. If it's not a xsd:date, like 2021-01-01, it will have "something" done.  I could not determine what that something
         # was but it was not what I wanted.  So I'm doing this.
@@ -143,12 +143,12 @@ if __name__ == "__main__":
     daily_notes = sorted(glob.glob(f'{args.root}/daily-status/*.md'))
     for path in sorted(glob.glob(f'{args.root}/**/*.md', recursive=True)):
         markdown = Path(path)
-        topic = Topic(notes, divider, markdown)
+        Divider = Divider(notes, divider, markdown)
 
         note = None
         if markdown.parent.name == 'daily-status':
-            note = DailyNote(notes, markdown, topic, find_previous=(Path(daily_notes[0]) != markdown))
+            note = DailyNote(notes, markdown, Divider, find_previous=(Path(daily_notes[0]) != markdown))
         else:
-            note = Note(notes, topic, markdown)
+            note = Note(notes, Divider, markdown)
 
     print(notes.serialize(format=args.format))
