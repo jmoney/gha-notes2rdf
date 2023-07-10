@@ -5,7 +5,7 @@ import os
 from datetime import datetime, timedelta
 from pathlib import Path
 from rdflib import XSD, Graph, Namespace
-from rdflib.namespace import PROV, RDF
+from rdflib.namespace import DCTERMS, RDF
 from rdflib.term import Literal, URIRef
 
 
@@ -42,17 +42,13 @@ class Topic(TopicGraph):
 
         super().add((self.iri, RDF.type, self.type()))
         super().add((self.iri, NOTES_NS.Path, Literal(self.path, datatype=XSD.string)))
-        super().add((self.iri, NOTES_NS.ismemberof, Literal(self.topic, datatype=XSD.string)))
+        super().add((self.iri, DCTERMS.isPartOf, Literal(self.topic, datatype=XSD.string)))
     
     def coin(self, key):
         return URIRef(f'{self.graph.base}Topic{slugify(key)}')
     
     def type(self):
         return NOTES_NS.Topic
-
-    def will_contain(self, note):
-        self.contains.append(note)
-        super().add((self.iri, NOTES_NS.contains, note))
 
 class Note(TopicGraph):
     iri: URIRef
