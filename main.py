@@ -60,7 +60,7 @@ class Divider(BinderGraph):
         super().add((self.iri, NOTES_NS.name, Literal(self.name, datatype=XSD.string)))
         super().add((self.iri, DCTERMS.isPartOf, self.binder.iri))
 
-    def coin(self, key):
+    def coin(self, key: str):
         return URIRef(f'{self.graph.base}Divider{slugify(key)}')
 
     def type(self):
@@ -143,12 +143,12 @@ if __name__ == "__main__":
     daily_notes = sorted(glob.glob(f'{args.root}/daily-status/*.md'))
     for path in sorted(glob.glob(f'{args.root}/**/*.md', recursive=True)):
         markdown = Path(path)
-        Divider = Divider(notes, binder, markdown)
+        divder = Divider(notes, binder, markdown.parent.name)
 
         note = None
         if markdown.parent.name == 'daily-status':
-            note = DailyNote(notes, markdown, Divider, find_previous=(Path(daily_notes[0]) != markdown))
+            note = DailyNote(notes, markdown, divder, find_previous=(Path(daily_notes[0]) != markdown))
         else:
-            note = Note(notes, Divider, markdown)
+            note = Note(notes, divder, markdown)
 
     print(notes.serialize(format=args.format))
