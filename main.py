@@ -50,11 +50,11 @@ class Divider(BinderGraph):
     binder: Binder
     name: str
 
-    def __init__(self, graph: Graph, binder: Binder, path: Path):
+    def __init__(self, graph: Graph, binder: Binder, name: str):
         super().__init__(graph)
-        self.iri = self.coin(path.parent.name)
+        self.iri = self.coin(name)
         self.binder = binder
-        self.name = slugify(path.parent.name)
+        self.name = slugify(name)
 
         super().add((self.iri, RDF.type, self.type()))
         super().add((self.iri, NOTES_NS.name, Literal(self.name, datatype=XSD.string)))
@@ -138,12 +138,12 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     notes = Graph(base=f'{args.uri}#')
-    divider = Divider(notes, os.getenv('GITHUB_REPOSITORY').split("/")[-1])
+    binder = Binder(notes, os.getenv('GITHUB_REPOSITORY').split("/")[-1])
 
     daily_notes = sorted(glob.glob(f'{args.root}/daily-status/*.md'))
     for path in sorted(glob.glob(f'{args.root}/**/*.md', recursive=True)):
         markdown = Path(path)
-        Divider = Divider(notes, divider, markdown)
+        Divider = Divider(notes, binder, markdown)
 
         note = None
         if markdown.parent.name == 'daily-status':
