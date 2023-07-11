@@ -43,7 +43,7 @@ class Binder(BinderGraph):
         return URIRef(f'{self.graph.base}Binder{slugify(key)}')
 
     def type(self):
-        return NOTES_NS.Divider
+        return NOTES_NS.Binder
 
 class Divider(BinderGraph):
     iri: URIRef
