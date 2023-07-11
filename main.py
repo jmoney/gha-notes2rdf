@@ -92,24 +92,36 @@ class Note(BinderGraph):
 
 class DailyNote(Note):
     today: str
-    previous: any
+    previous: URIRef
+    next: URIRef
 
-    def __init__(self, graph: Graph, path: Path, Divider: Divider, find_previous: bool = True):
+    def __init__(self, graph: Graph, path: Path, Divider: Divider, find_previous: bool = True, find_next: bool = True):
         super().__init__(graph, Divider, path)
         # date-i-fy
         # later when this literal is added to the graph, it will be converted to a date. If it's not a xsd:date, like 2021-01-01, it will have "something" done.  I could not determine what that something
         # was but it was not what I wanted.  So I'm doing this.
         self.today = path.stem.replace("_", "-")
-        _today = datetime.strptime(self.today, '%Y-%m-%d')
+        current = datetime.strptime(self.today, '%Y-%m-%d')
 
         if find_previous:
             # find the previous day
-            yesterday = _today - timedelta(days=1)
-            while os.path.isfile(f'{path.parent}/{yesterday.strftime("%Y_%m_%d")}.md') is False:
-                yesterday = yesterday - timedelta(days=1)
+            _previous = current - timedelta(days=1)
+            while os.path.isfile(f'{path.parent}/{_previous.strftime("%Y_%m_%d")}.md') is False:
+                _previous = _previous - timedelta(days=1)
 
-            self.previous = URIRef(f'{graph.base}Daily{slugify(yesterday.strftime("%Y-%m-%d"))}')
+            self.previous = URIRef(f'{graph.base}Daily{slugify(_previous.strftime("%Y-%m-%d"))}')
             super().add((self.iri, NOTES_NS.previous, self.previous))
+
+        if find_next:
+            # find the previous day
+            _next = current + timedelta(days=1)
+            while os.path.isfile(f'{path.parent}/{_next.strftime("%Y_%m_%d")}.md') is False:
+                _next = _next + timedelta(days=1)
+
+            self.next = URIRef(f'{graph.base}Daily{slugify(_next.strftime("%Y-%m-%d"))}')
+            super().add((self.iri, NOTES_NS.next, self.next))
+
+
 
     def coin(self, key):
         return URIRef(f'{self.graph.base}Daily{slugify(key)}')
@@ -147,7 +159,7 @@ if __name__ == "__main__":
 
         note = None
         if markdown.parent.name == 'daily-status':
-            note = DailyNote(notes, markdown, divder, find_previous=(Path(daily_notes[0]) != markdown))
+            note = DailyNote(notes, markdown, divder, find_previous=(Path(daily_notes[0]) != markdown), find_next=(Path(daily_notes[-1]) != markdown))
         else:
             note = Note(notes, divder, markdown)
 
