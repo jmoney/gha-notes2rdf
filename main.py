@@ -75,7 +75,7 @@ class Note(BinderGraph):
     def __init__(self, graph: Graph,  Divider: Divider, path: Path):
         super().__init__(graph)
         self.iri = self.coin(path.stem)
-        self.title = slugify(path.stem)
+        self.title = self.title(path.stem)
         self.Divider = Divider
         self.filename = path
 
@@ -89,6 +89,9 @@ class Note(BinderGraph):
 
     def type(self):
         return NOTES_NS.Note
+
+    def title(self, key: str):
+        return slugify(key)
 
 class DailyNote(Note):
     today: str
@@ -128,6 +131,9 @@ class DailyNote(Note):
 
     def type(self):
         return NOTES_NS.Daily
+
+    def title(self, key: str):
+        return key
 
 def slugify(value: str):
     """
