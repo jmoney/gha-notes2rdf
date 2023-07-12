@@ -139,7 +139,7 @@ class DailyNote(Note):
         return NOTES_NS.Daily
 
     def title(self, key: str):
-        return f'{datetime.strptime(key.replace("_", "-"), "%Y-%m-%d").strftime("%B: %d, %Y")}'
+        return key.replace("_", "-")
 
 class DailyTask(BinderGraph):
     bnode: BNode
