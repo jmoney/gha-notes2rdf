@@ -158,7 +158,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
     uri = f'{args.uri}#'
     notes = Graph()
-    binder = Binder(notes, os.getenv('GITHUB_REPOSITORY').split("/")[-1], uri)
+    binder = Binder(notes, uri, os.getenv('GITHUB_REPOSITORY').split("/")[-1])
 
     daily_notes = sorted(glob.glob(f'{args.root}/daily-status/*.md'))
     for path in sorted(glob.glob(f'{args.root}/**/*.md', recursive=True)):
