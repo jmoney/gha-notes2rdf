@@ -12,13 +12,15 @@ from rdflib.term import Literal, URIRef
 NOTES_NS = Namespace('https://www.jmoney.dev/notes#')
 
 class BinderGraph:
-    def __init__(self, graph: Graph):
+    graph: Graph
+    uri: str
+
+    def __init__(self, graph: Graph, uri: str):
         self.graph = graph
+        self.uri = uri
         self.graph.bind('notes', NOTES_NS)
-        self.nodes = {}
 
     def add(self, node):
-        self.nodes[node[0]] = node
         self.graph.add(node)
 
     def get(self, iri):
@@ -31,8 +33,8 @@ class Binder(BinderGraph):
     iri: URIRef
     name: str
 
-    def __init__(self, graph: Graph, name: str):
-        super().__init__(graph)
+    def __init__(self, graph: Graph, uri: str, name: str):
+        super().__init__(graph, uri)
         self.iri = self.coin(name)
         self.name = slugify(name)
 
@@ -40,7 +42,7 @@ class Binder(BinderGraph):
         super().add((self.iri, NOTES_NS.name, Literal(self.name, datatype=XSD.string)))
 
     def coin(self, key):
-        return URIRef(f'{self.graph.base}Binder{slugify(key)}')
+        return URIRef(f'{self.uri}Binder{slugify(key)}')
 
     def type(self):
         return NOTES_NS.Binder
@@ -50,8 +52,8 @@ class Divider(BinderGraph):
     binder: Binder
     name: str
 
-    def __init__(self, graph: Graph, binder: Binder, name: str):
-        super().__init__(graph)
+    def __init__(self, graph: Graph, uri: str, binder: Binder, name: str):
+        super().__init__(graph, uri)
         self.iri = self.coin(name)
         self.binder = binder
         self.name = slugify(name)
@@ -61,7 +63,7 @@ class Divider(BinderGraph):
         super().add((self.iri, DCTERMS.isPartOf, self.binder.iri))
 
     def coin(self, key: str):
-        return URIRef(f'{self.graph.base}Divider{slugify(key)}')
+        return URIRef(f'{self.uri}Divider{slugify(key)}')
 
     def type(self):
         return NOTES_NS.Divider
@@ -69,23 +71,23 @@ class Divider(BinderGraph):
 class Note(BinderGraph):
     iri: URIRef
     title: str
-    Divider: Divider
+    divider: Divider
     filename: str
 
-    def __init__(self, graph: Graph,  Divider: Divider, path: Path):
-        super().__init__(graph)
+    def __init__(self, graph: Graph, uri: str, divider: Divider, path: Path):
+        super().__init__(graph, uri)
         self.iri = self.coin(path.stem)
         self.title = self.title(path.stem)
-        self.Divider = Divider
+        self.divider = divider
         self.filename = path
 
         super().add((self.iri, RDF.type, self.type()))
         super().add((self.iri, NOTES_NS.title, Literal(self.title, datatype=XSD.string)))
         super().add((self.iri, NOTES_NS.filename, Literal(self.filename, datatype=XSD.string)))
-        super().add((self.iri, DCTERMS.isPartOf, self.Divider.iri))
+        super().add((self.iri, DCTERMS.isPartOf, self.divider.iri))
 
     def coin(self, key):
-        return URIRef(f'{self.graph.base}Note{slugify(key)}')
+        return URIRef(f'{self.uri}Note{slugify(key)}')
 
     def type(self):
         return NOTES_NS.Note
@@ -98,8 +100,8 @@ class DailyNote(Note):
     previous: URIRef
     next: URIRef
 
-    def __init__(self, graph: Graph, path: Path, Divider: Divider, find_previous: bool = True, find_next: bool = True):
-        super().__init__(graph, Divider, path)
+    def __init__(self, graph: Graph, uri: str, path: Path, divider: Divider, find_previous: bool = True, find_next: bool = True):
+        super().__init__(graph, uri, divider, path)
         # date-i-fy
         # later when this literal is added to the graph, it will be converted to a date. If it's not a xsd:date, like 2021-01-01, it will have "something" done.  I could not determine what that something
         # was but it was not what I wanted.  So I'm doing this.
@@ -127,7 +129,7 @@ class DailyNote(Note):
 
 
     def coin(self, key):
-        return URIRef(f'{self.graph.base}Daily{slugify(key)}')
+        return URIRef(f'{self.uri}Daily{slugify(key)}')
 
     def type(self):
         return NOTES_NS.Daily
@@ -154,19 +156,19 @@ if __name__ == "__main__":
     parser.add_argument('--uri', action='store', dest='uri', default="")
 
     args = parser.parse_args()
-
-    notes = Graph(base=f'{args.uri}#')
-    binder = Binder(notes, os.getenv('GITHUB_REPOSITORY').split("/")[-1])
+    uri = f'{args.uri}#'
+    notes = Graph()
+    binder = Binder(notes, os.getenv('GITHUB_REPOSITORY').split("/")[-1], uri)
 
     daily_notes = sorted(glob.glob(f'{args.root}/daily-status/*.md'))
     for path in sorted(glob.glob(f'{args.root}/**/*.md', recursive=True)):
         markdown = Path(path)
-        divder = Divider(notes, binder, markdown.parent.name)
+        divder = Divider(notes, uri, binder, markdown.parent.name)
 
         note = None
         if markdown.parent.name == 'daily-status':
-            note = DailyNote(notes, markdown, divder, find_previous=(Path(daily_notes[0]) != markdown), find_next=(Path(daily_notes[-1]) != markdown))
+            note = DailyNote(notes, uri, markdown, divder, find_previous=(Path(daily_notes[0]) != markdown), find_next=(Path(daily_notes[-1]) != markdown))
         else:
-            note = Note(notes, divder, markdown)
+            note = Note(notes, uri, divder, markdown)
 
     print(notes.serialize(format=args.format))
