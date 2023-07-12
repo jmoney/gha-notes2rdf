@@ -137,7 +137,8 @@ class DailyNote(Note):
         return NOTES_NS.Daily
 
     def title(self, key: str):
-        return key
+        return f'{datetime.strptime(key.replace("_", "-"), "%Y-%m-%d").strftime("%B: %d, %Y")}'
+        return
 
 class DailyTask(BinderGraph):
     iri: URIRef
