@@ -118,7 +118,7 @@ class DailyNote(Note):
             while os.path.isfile(f'{path.parent}/{_previous.strftime("%Y_%m_%d")}.md') is False:
                 _previous = _previous - timedelta(days=1)
 
-            self.previous = URIRef(f'{graph.base}Daily{slugify(_previous.strftime("%Y-%m-%d"))}')
+            self.previous = URIRef(f'{self.uri}Daily{slugify(_previous.strftime("%Y-%m-%d"))}')
             super().add((self.iri, NOTES_NS.previous, self.previous))
 
         if find_next:
@@ -127,7 +127,7 @@ class DailyNote(Note):
             while os.path.isfile(f'{path.parent}/{_next.strftime("%Y_%m_%d")}.md') is False:
                 _next = _next + timedelta(days=1)
 
-            self.next = URIRef(f'{graph.base}Daily{slugify(_next.strftime("%Y-%m-%d"))}')
+            self.next = URIRef(f'{self.uri}Daily{slugify(_next.strftime("%Y-%m-%d"))}')
             super().add((self.iri, NOTES_NS.next, self.next))
 
     def coin(self, key):
