@@ -1,8 +1,8 @@
 import argparse
 import glob
+import hashlib
 import os
 import re
-import uuid
 
 from datetime import datetime, timedelta
 from pathlib import Path
@@ -130,6 +130,8 @@ class DailyNote(Note):
             self.next = URIRef(f'{self.uri}Daily{slugify(_next.strftime("%Y-%m-%d"))}')
             super().add((self.iri, NOTES_NS.next, self.next))
 
+        super().add((self.iri, NOTES_NS.today, Literal(self.today, datatype=XSD.date)))
+
     def coin(self, key):
         return URIRef(f'{self.uri}Daily{slugify(key)}')
 
@@ -138,7 +140,6 @@ class DailyNote(Note):
 
     def title(self, key: str):
         return f'{datetime.strptime(key.replace("_", "-"), "%Y-%m-%d").strftime("%B: %d, %Y")}'
-        return
 
 class DailyTask(BinderGraph):
     bnode: BNode
