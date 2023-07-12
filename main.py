@@ -141,21 +141,21 @@ class DailyNote(Note):
         return
 
 class DailyTask(BinderGraph):
-    iri: URIRef
+    bnode: BNode
     daily: DailyNote
     complete: bool
     content: str
 
     def __init__(self, graph: Graph, uri: str, daily: DailyNote, content: str, complete: bool = False):
         super().__init__(graph, uri)
-        self.iri = URIRef(f'{self.uri}Task{uuid.uuid4()}')
+        self.bnode = BNode()
         self.daily = daily
         self.complete = complete
         self.content = content
-        super().add((self.iri, RDF.type, self.type()))
-        super().add((self.iri, DCTERMS.isPartOf, daily.iri))
-        super().add((self.iri, NOTES_NS.content, Literal(self.content, datatype=XSD.string)))
-        super().add((self.iri, NOTES_NS.complete, Literal(self.complete, datatype=XSD.boolean)))
+        super().add((self.bnode, RDF.type, self.type()))
+        super().add((self.bnode, DCTERMS.isPartOf, daily.iri))
+        super().add((self.bnode, NOTES_NS.content, Literal(self.content, datatype=XSD.string)))
+        super().add((self.bnode, NOTES_NS.complete, Literal(self.complete, datatype=XSD.boolean)))
 
     def type(self):
         return NOTES_NS.Task
