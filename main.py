@@ -130,7 +130,7 @@ class DailyNote(Note):
             self.next = URIRef(f'{self.uri}Daily{slugify(_next.strftime("%Y-%m-%d"))}')
             super().add((self.iri, NOTES_NS.next, self.next))
 
-        super().add((self.iri, NOTES_NS.today, Literal(self.today, datatype=XSD.date)))
+        super().add((self.iri, NOTES_NS.date, Literal(self.today, datatype=XSD.date)))
 
     def coin(self, key):
         return URIRef(f'{self.uri}Daily{slugify(key)}')
