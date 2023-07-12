@@ -1,15 +1,19 @@
 import argparse
 import glob
 import os
+import re
+import uuid
 
 from datetime import datetime, timedelta
 from pathlib import Path
 from rdflib import XSD, Graph, Namespace
 from rdflib.namespace import DCTERMS, RDF
-from rdflib.term import Literal, URIRef
+from rdflib.term import BNode, Literal, URIRef
 
 
 NOTES_NS = Namespace('https://www.jmoney.dev/notes#')
+unfinished = re.compile('\*\s\[\s\].+')
+finished = re.compile('\*\s\[X].+')
 
 class BinderGraph:
     graph: Graph
@@ -126,8 +130,6 @@ class DailyNote(Note):
             self.next = URIRef(f'{graph.base}Daily{slugify(_next.strftime("%Y-%m-%d"))}')
             super().add((self.iri, NOTES_NS.next, self.next))
 
-
-
     def coin(self, key):
         return URIRef(f'{self.uri}Daily{slugify(key)}')
 
@@ -136,6 +138,26 @@ class DailyNote(Note):
 
     def title(self, key: str):
         return key
+
+class DailyTask(BinderGraph):
+    iri: URIRef
+    daily: DailyNote
+    complete: bool
+    content: str
+
+    def __init__(self, graph: Graph, uri: str, daily: DailyNote, content: str, complete: bool = False):
+        super().__init__(graph, uri)
+        self.iri = URIRef(f'{self.uri}Task{uuid.uuid4()}')
+        self.daily = daily
+        self.complete = complete
+        self.content = content
+        super().add((self.iri, RDF.type, self.type()))
+        super().add((self.iri, DCTERMS.isPartOf, daily.iri))
+        super().add((self.iri, NOTES_NS.content, Literal(self.content, datatype=XSD.string)))
+        super().add((self.iri, NOTES_NS.complete, Literal(self.complete, datatype=XSD.boolean)))
+
+    def type(self):
+        return NOTES_NS.Task
 
 def slugify(value: str):
     """
@@ -151,7 +173,7 @@ if __name__ == "__main__":
                     description='Converts a specific directory structure of markdown files to RDF',
                     epilog='Peronsal project by @jmoney')
 
-    parser.add_argument('--format', action='store', dest='format', default='ttl')
+    parser.add_argument('--format', action='store', dest='format', default='turtle')
     parser.add_argument('--root', action='store', dest='root')
     parser.add_argument('--uri', action='store', dest='uri', default="")
 
@@ -168,6 +190,12 @@ if __name__ == "__main__":
         note = None
         if markdown.parent.name == 'daily-status':
             note = DailyNote(notes, uri, markdown, divder, find_previous=(Path(daily_notes[0]) != markdown), find_next=(Path(daily_notes[-1]) != markdown))
+            lines = markdown.read_text().splitlines()
+            for line in lines:
+                if unfinished.match(line):
+                    DailyTask(notes, uri, note, line, False)
+                elif finished.match(line):
+                    DailyTask(notes, uri, note, line, True)
         else:
             note = Note(notes, uri, divder, markdown)
 
