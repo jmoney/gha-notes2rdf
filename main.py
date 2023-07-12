@@ -13,7 +13,7 @@ from rdflib.term import BNode, Literal, URIRef
 
 NOTES_NS = Namespace('https://www.jmoney.dev/notes#')
 unfinished = re.compile('\*\s\[\s\].+')
-finished = re.compile('\*\s\[X].+')
+finished = re.compile('\*\s\[X\].+')
 
 class BinderGraph:
     graph: Graph
