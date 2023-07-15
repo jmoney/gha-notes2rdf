@@ -1,6 +1,5 @@
 import argparse
 import glob
-import hashlib
 import os
 import re
 
@@ -12,8 +11,9 @@ from rdflib.term import BNode, Literal, URIRef
 
 
 NOTES_NS = Namespace('https://www.jmoney.dev/notes#')
-unfinished = re.compile('\*\s\[\s\].+')
-finished = re.compile('\*\s\[X\].+')
+unfinished = re.compile('\*\s\[\s\](?P<task>.+)')
+finished = re.compile('\*\s\[X\](?P<task>.+)')
+task = re.compile('\*\s\[(?P<complete>X|\s)\]\s(?P<task>.+)')
 
 class BinderGraph:
     graph: Graph
@@ -194,10 +194,9 @@ if __name__ == "__main__":
             note = DailyNote(notes, uri, markdown, divder, find_previous=(Path(daily_notes[0]) != markdown), find_next=(Path(daily_notes[-1]) != markdown))
             lines = markdown.read_text().splitlines()
             for line in lines:
-                if unfinished.match(line):
-                    DailyTask(notes, uri, note, line, False)
-                elif finished.match(line):
-                    DailyTask(notes, uri, note, line, True)
+                match = task.match(line)
+                if match:
+                    DailyTask(notes, uri, note, match.group("task"), match.group("complete") == "X")
         else:
             note = Note(notes, uri, divder, markdown)
 
