@@ -196,12 +196,12 @@ if __name__ == "__main__":
         if markdown.parent.name == 'daily-status':
             note = DailyNote(notes, uri, markdown, divder, find_previous=(Path(daily_notes[0]) != markdown), find_next=(Path(daily_notes[-1]) != markdown))
             lines = markdown.read_text().splitlines()
-            rank = 0
+            rank = 1
             for line in lines:
-                rank = rank + 1
                 match = task.match(line)
                 if match:
                     DailyTask(notes, uri, note, match.group("task"), rank, match.group("complete") == "X")
+                    rank = rank + 1
         else:
             note = Note(notes, uri, divder, markdown)
 
