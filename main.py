@@ -146,17 +146,20 @@ class DailyTask(BinderGraph):
     daily: DailyNote
     complete: bool
     content: str
+    rank: int
 
-    def __init__(self, graph: Graph, uri: str, daily: DailyNote, content: str, complete: bool = False):
+    def __init__(self, graph: Graph, uri: str, daily: DailyNote, content: str, rank: int, complete: bool = False):
         super().__init__(graph, uri)
         self.bnode = BNode()
         self.daily = daily
         self.complete = complete
         self.content = content
+        self.rank = rank
         super().add((self.bnode, RDF.type, self.type()))
         super().add((self.bnode, DCTERMS.isPartOf, daily.iri))
         super().add((self.bnode, NOTES_NS.content, Literal(self.content, datatype=XSD.string)))
         super().add((self.bnode, NOTES_NS.complete, Literal(self.complete, datatype=XSD.boolean)))
+        super().add((self.bnode, NOTES_NS.rank, Literal(self.rank, datatype=XSD.integer)))
 
     def type(self):
         return NOTES_NS.Task
@@ -193,10 +196,12 @@ if __name__ == "__main__":
         if markdown.parent.name == 'daily-status':
             note = DailyNote(notes, uri, markdown, divder, find_previous=(Path(daily_notes[0]) != markdown), find_next=(Path(daily_notes[-1]) != markdown))
             lines = markdown.read_text().splitlines()
+            rank = 0
             for line in lines:
+                rank = rank + 1
                 match = task.match(line)
                 if match:
-                    DailyTask(notes, uri, note, match.group("task"), match.group("complete") == "X")
+                    DailyTask(notes, uri, note, match.group("task"), rank, match.group("complete") == "X")
         else:
             note = Note(notes, uri, divder, markdown)
 
