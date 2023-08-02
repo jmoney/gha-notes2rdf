@@ -99,71 +99,6 @@ class Note(BinderGraph):
     def title(self, key: str):
         return slugify(key)
 
-class DailyNote(Note):
-    today: str
-    previous: URIRef
-    next: URIRef
-
-    def __init__(self, graph: Graph, uri: str, path: Path, divider: Divider, find_previous: bool = True, find_next: bool = True):
-        super().__init__(graph, uri, divider, path)
-        # date-i-fy
-        # later when this literal is added to the graph, it will be converted to a date. If it's not a xsd:date, like 2021-01-01, it will have "something" done.  I could not determine what that something
-        # was but it was not what I wanted.  So I'm doing this.
-        self.today = path.stem.replace("_", "-")
-        current = datetime.strptime(self.today, '%Y-%m-%d')
-
-        if find_previous:
-            # find the previous day
-            _previous = current - timedelta(days=1)
-            while os.path.isfile(f'{path.parent}/{_previous.strftime("%Y_%m_%d")}.md') is False:
-                _previous = _previous - timedelta(days=1)
-
-            self.previous = URIRef(f'{self.uri}Daily{slugify(_previous.strftime("%Y-%m-%d"))}')
-            super().add((self.iri, NOTES_NS.previous, self.previous))
-
-        if find_next:
-            # find the previous day
-            _next = current + timedelta(days=1)
-            while os.path.isfile(f'{path.parent}/{_next.strftime("%Y_%m_%d")}.md') is False:
-                _next = _next + timedelta(days=1)
-
-            self.next = URIRef(f'{self.uri}Daily{slugify(_next.strftime("%Y-%m-%d"))}')
-            super().add((self.iri, NOTES_NS.next, self.next))
-
-        super().add((self.iri, NOTES_NS.date, Literal(self.today, datatype=XSD.date)))
-
-    def coin(self, key):
-        return URIRef(f'{self.uri}Daily{slugify(key)}')
-
-    def type(self):
-        return NOTES_NS.Daily
-
-    def title(self, key: str):
-        return key.replace("_", "-")
-
-class DailyTask(BinderGraph):
-    bnode: BNode
-    daily: DailyNote
-    complete: bool
-    content: str
-    rank: int
-
-    def __init__(self, graph: Graph, uri: str, daily: DailyNote, content: str, rank: int, complete: bool = False):
-        super().__init__(graph, uri)
-        self.bnode = BNode()
-        self.daily = daily
-        self.complete = complete
-        self.content = content
-        self.rank = rank
-        super().add((self.bnode, RDF.type, self.type()))
-        super().add((self.bnode, DCTERMS.isPartOf, daily.iri))
-        super().add((self.bnode, NOTES_NS.content, Literal(self.content, datatype=XSD.string)))
-        super().add((self.bnode, NOTES_NS.complete, Literal(self.complete, datatype=XSD.boolean)))
-        super().add((self.bnode, NOTES_NS.rank, Literal(self.rank, datatype=XSD.integer)))
-
-    def type(self):
-        return NOTES_NS.Task
-
 def slugify(value: str):
     """
     Normalizes string, converts to lowercase, removes non-alpha characters,
@@ -187,7 +122,6 @@ if __name__ == "__main__":
     notes = Graph()
     binder = Binder(notes, uri, os.getenv('GITHUB_REPOSITORY').split("/")[-1])
 
-    daily_notes = sorted(glob.glob(f'{args.root}/daily-status/*.md'))
     for path in sorted(glob.glob(f'{args.root}/**/*.md', recursive=True)):
         markdown = Path(path)
         divder = Divider(notes, uri, binder, markdown.parent.name)
