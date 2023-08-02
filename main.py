@@ -191,18 +191,6 @@ if __name__ == "__main__":
     for path in sorted(glob.glob(f'{args.root}/**/*.md', recursive=True)):
         markdown = Path(path)
         divder = Divider(notes, uri, binder, markdown.parent.name)
-
-        note = None
-        if markdown.parent.name == 'daily-status':
-            note = DailyNote(notes, uri, markdown, divder, find_previous=(Path(daily_notes[0]) != markdown), find_next=(Path(daily_notes[-1]) != markdown))
-            lines = markdown.read_text().splitlines()
-            rank = 0
-            for line in lines:
-                match = task.match(line)
-                if match:
-                    DailyTask(notes, uri, note, match.group("task"), rank, match.group("complete") == "X")
-                    rank = rank + 1
-        else:
-            note = Note(notes, uri, divder, markdown)
+        note = Note(notes, uri, divder, markdown)
 
     print(notes.serialize(format=args.format))
