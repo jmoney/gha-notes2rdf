@@ -97,7 +97,7 @@ class Note(BinderGraph):
         return NOTES_NS.Note
 
     def title(self, key: str):
-        return slugify(key)
+        return key.title()
 
 def slugify(value: str):
     """
